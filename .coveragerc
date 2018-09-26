@@ -1,0 +1,7 @@
+[report]
+omit =
+    setup.py
+    asv_demo/__main__.py
+    asv_demo/_version.py
+    versioneer.py
+    tests/*

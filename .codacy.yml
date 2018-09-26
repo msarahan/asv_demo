@@ -1,0 +1,8 @@
+---
+exclude_paths:
+  - 'asv_demo/_version.py'
+  - 'tests/**/*'
+  - 'tests/*'
+  - 'benchmarks/**/*'
+  - 'setup.py'
+  - 'versioneer.py'
