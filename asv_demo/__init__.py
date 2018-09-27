@@ -2,7 +2,7 @@ import math
 import random
 import string
 
-size = 1
+size = 100
 
 
 def math_work(n):

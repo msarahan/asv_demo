@@ -1,7 +1,8 @@
 from unittest import TestCase
 from asv_demo import math_work, memory_work
 
-test_size = 1
+test_size = 100
+
 
 def tofurkey():
     math_work(test_size)
