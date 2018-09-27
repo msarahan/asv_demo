@@ -1,5 +1,6 @@
 from unittest import TestCase
 from asv_demo import math_work, memory_work
+import pytest
 
 test_size = 10000
 
@@ -20,11 +21,13 @@ def test_tofurkey():
     tofurkey()
 
 
+@pytest.mark.benchmark
 def test_red_meat():
     red_meat()
 
 
 class IntegrationTests(TestCase):
+    @pytest.mark.benchmark
     def test_class_tofurkey(self):
         tofurkey()
 

@@ -1,10 +1,34 @@
 import ast
 import functools
 from glob import glob
+import inspect
 import os
 from pprint import pprint
 import sys
 import types
+
+
+# https://stackoverflow.com/a/31197273/1170370
+def _get_decorators(cls):
+    target = cls
+    decorators = {}
+
+    def visit_FunctionDef(node):
+        decorators[node.name] = []
+        for n in node.decorator_list:
+            name = ''
+            if isinstance(n, ast.Call):
+                name = n.func.attr if isinstance(n.func, ast.Attribute) else n.func.id
+            else:
+                name = n.attr if isinstance(n, ast.Attribute) else n.id
+
+            decorators[node.name].append(name)
+
+    node_iter = ast.NodeVisitor()
+    node_iter.visit_FunctionDef = visit_FunctionDef
+    node_iter.visit(ast.parse(inspect.getsource(target)))
+    return decorators
+
 
 _thisdir = os.path.dirname(__file__)
 test_dir = os.path.join(os.path.dirname(_thisdir), 'tests')
@@ -39,18 +63,22 @@ def _import_test_module(test_file_path):
 # ======================================================================
 
 
+# https://stackoverflow.com/a/31005891/1170370
+def _top_level_functions(body, module):
+    test_funcs = [f.name for f in body if _is_test_func(f)]
+    if test_funcs:
+        benchmark_funcs = _get_decorators(module)
+    return [f for f, decorators in benchmark_funcs.items() if ('benchmark' in decorators and
+                                                               f in test_funcs)]
+
+
 def _list_test_functions(filename):
     mod_ast = _parse_ast(filename)
-    return _top_level_functions(mod_ast.body)
-
-
-# https://stackoverflow.com/a/31005891/1170370
-def _top_level_functions(body):
-    return [f.name for f in body if _is_test_func(f)]
+    return _top_level_functions(mod_ast.body, _import_test_module(filename))
 
 
 # https://stackoverflow.com/a/13503277/1170370
-def copy_func(f):
+def _copy_func(f):
     """Based on http://stackoverflow.com/a/6528148/190597 (Glenn Maynard)"""
     g = types.FunctionType(f.__code__, f.__globals__, name=f.__name__,
                            argdefs=f.__defaults__,
@@ -71,7 +99,7 @@ def _add_renamed_functions_from_test_file(dest_module, test_file_path, repl_name
     pprint(funcs)
     for func in funcs:
         new_func_name = func.replace('test', repl_name, 1)
-        new_func = copy_func(getattr(sys.modules[test_module.__name__], func))
+        new_func = _copy_func(getattr(sys.modules[test_module.__name__], func))
         new_func.__name__ = new_func_name
 
         print("Adding function {} to module {}".format(new_func_name, dest_module_name))
@@ -100,8 +128,9 @@ def _list_classes_with_test_methods(filename):
 
 def _reclassify_test(klass, new_prefix):
     new_attrs = {}
+    benchmark_funcs = _get_decorators(klass)
     for attr, val in klass.__dict__.items():
-        if attr.startswith("test_"):
+        if attr.startswith("test_") and benchmark_funcs[attr]:
             new_attrs[attr.replace("test", new_prefix, 1)] = val
         else:
             new_attrs[attr] = val
@@ -120,7 +149,8 @@ def _add_renamed_classes_from_test_file(dest_module, test_file_path, repl_name):
         attrs = _reclassify_test(old_class, repl_name)
         print("Adding class {} to module {} with attrs:".format(new_class_name, dest_module_name))
         pprint(attrs)
-        setattr(sys.modules[dest_module.__name__], new_class_name, type(new_class_name, (old_class, ), attrs))
+        setattr(sys.modules[dest_module.__name__], new_class_name,
+                type(new_class_name, (old_class, ), attrs))
 
 
 def add_renamed_classes_to_module(module, repl_name):
