@@ -9,8 +9,7 @@
     "show_commit_url": "http://github.com/msarahan/asv_demo/commit/",
     "pythons": ["3.6", "3.7"],
     "matrix": {
-        "pytest": [],
-        "dill": [],
+        "pytest": []
     },
     "env_dir": ".asv/env",
     "results_dir": ".asv/results",

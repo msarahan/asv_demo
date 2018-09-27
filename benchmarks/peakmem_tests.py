@@ -4,7 +4,7 @@ import sys
 
 benchmarks_dir = os.path.abspath(os.path.dirname(__file__))
 root_dir = os.path.dirname(benchmarks_dir)
-sys.path.insert(0, root_dir)
+# sys.path.insert(0, root_dir)
 sys.path.insert(0, benchmarks_dir)
 
 from utils import add_test_funcs_to_module, add_renamed_classes_to_module
